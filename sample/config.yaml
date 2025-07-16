@@ -1,0 +1,24 @@
+mgmt_interface: "en6"
+
+test_network:
+  test_interface: "en7"
+  ip_address: "10.132.20.2"
+  netmask: "255.255.255.252"
+  gateway: "10.132.20.1"
+
+subnets:
+  nsb: "10.150.88.0/24"
+  sensor: "10.150.89.0/24"
+  client: "10.150.90.0/24"
+
+dns_servers:
+  - "10.129.9.193"
+ntp_servers: []
+radius:
+  servers:
+    - "10.129.4.249"
+  user: "nile"
+  password: "nile123"
+  secret: "testing123"
+dhcp_servers:
+    - "10.129.1.116" 
