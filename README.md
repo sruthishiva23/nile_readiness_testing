@@ -196,7 +196,8 @@ sudo python3 revert.py   # Restore original configuration
 ## Log Files
 
 The suite generates detailed log files:
-- `nile_readiness.log` - Setup and test execution logs
+- `nile_readiness_setup.log` - Setup logs
+- `nile_readiness.log` - Test execution logs
 - `nile_readiness_revert.log` - Restoration process logs
 - `packets.pcap` - Network packet capture (created during setup)
 
@@ -296,5 +297,3 @@ For issues or questions:
 3. Ensure all prerequisites are installed
 4. Test individual network components manually
 5. Review network infrastructure requirements
-
-**Note**: Always test in a non-production environment first to understand the impact on your network configuration.
