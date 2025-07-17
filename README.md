@@ -51,28 +51,6 @@ This suite provides comprehensive network readiness testing for macOS systems, d
 - **Network Access**: Internet connectivity for testing external services
 - **Homebrew**: Package manager for installing additional tools
 
-#### Check Your macOS Version and Architecture
-```bash
-# Check macOS version
-sw_vers
-
-# Check macOS version details
-system_profiler SPSoftwareDataType | grep "System Version"
-
-# Quick version check
-sw_vers -productVersion
-
-# Check if compatible (should be 11.0 or higher)
-sw_vers -productVersion | awk -F. '{if($1>=11 || ($1==10 && $2>=15)) print "Compatible"; else print "Upgrade Required"}'
-
-# Check Mac architecture (important for Homebrew installation)
-uname -m
-# Returns: arm64 (Apple Silicon) or x86_64 (Intel)
-
-# Check processor details
-system_profiler SPHardwareDataType | grep "Processor\|Chip"
-```
-
 ### Required System Tools
 
 #### Built-in macOS Tools
@@ -152,68 +130,6 @@ ifconfig 2>/dev/null && echo "✓ ifconfig available" || echo "✗ ifconfig miss
 ping -c 1 127.0.0.1 >/dev/null 2>&1 && echo "✓ ping available" || echo "✗ ping missing"
 networksetup -help 2>/dev/null && echo "✓ networksetup available" || echo "✗ networksetup missing"
 ```
-
-#### Troubleshooting Installation
-```bash
-# Check Mac architecture to determine correct Homebrew path
-ARCH=$(uname -m)
-echo "Architecture: $ARCH"
-
-# If tools are not found, check PATH
-echo $PATH | grep -q "/opt/homebrew/bin\|/usr/local/bin" && echo "Homebrew in PATH" || echo "Add Homebrew to PATH"
-
-# Add Homebrew to PATH based on architecture
-if [[ "$ARCH" == "arm64" ]]; then
-    # Apple Silicon Macs (M1, M2, M3, etc.)
-    echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc
-    echo "Added Apple Silicon Homebrew path"
-elif [[ "$ARCH" == "x86_64" ]]; then
-    # Intel Macs
-    echo 'export PATH="/usr/local/bin:$PATH"' >> ~/.zshrc  
-    echo "Added Intel Homebrew path"
-fi
-
-# Apply changes and test
-source ~/.zshrc
-echo "Updated PATH: $PATH"
-
-# Verify Homebrew installation
-brew --version && echo "✓ Homebrew working" || echo "✗ Homebrew not found"
-```
-
-## macOS-Specific Considerations
-
-### System Integrity Protection (SIP)
-Some network operations may be restricted on newer macOS versions:
-```bash
-# Check SIP status
-csrutil status
-
-# If needed, SIP can be disabled in Recovery Mode (not recommended for production systems)
-# Restart → Hold Cmd+R → Terminal → csrutil disable → restart
-```
-
-### Network Service Management
-macOS manages network services differently than other Unix systems:
-```bash
-# View current network service order
-networksetup -listnetworkserviceorder
-
-# Temporarily disable other network services during testing (optional)
-networksetup -setnetworkserviceenabled "Wi-Fi" off
-networksetup -setnetworkserviceenabled "Wi-Fi" on  # Re-enable after testing
-```
-
-### Firewall and Security
-```bash
-# Check firewall status (may interfere with testing)
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
-
-# Temporarily disable firewall for testing (re-enable afterward)
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate off
-sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
-```
-
 ## Configuration
 
 ### Configuration File: `config.yaml`
@@ -308,7 +224,6 @@ ping -c 3 -I en0 8.8.8.8
 - **Root Privileges**: All scripts must be run with `sudo` for network interface management and system configuration
 - **Network Interfaces**: Use macOS interface names (typically `en0`, `en1`, etc.) - check with `ifconfig -l`
 - **System Integrity Protection**: Some network operations may require SIP configuration on newer macOS versions
-- **Terminal Access**: Use Terminal.app or iTerm2 for best compatibility
 
 ### Step 1: Prepare Configuration
 1. **Check macOS compatibility**: Ensure you're running macOS 11.0+ using `sw_vers`
