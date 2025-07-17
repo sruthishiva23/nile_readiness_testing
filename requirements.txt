@@ -1,0 +1,17 @@
+# Network Readiness Testing Dependencies
+# Core logging functionality
+
+
+colorlog>=6.7.0
+
+# YAML configuration file parsing
+PyYAML>=6.0
+
+# DHCP client functionality
+dhcppython>=1.6.2
+
+# Network packet manipulation and analysis
+scapy>=2.4.5
+
+# NTP client functionality
+ntplib>=0.4.0 

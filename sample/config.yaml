@@ -13,12 +13,15 @@ subnets:
 
 dns_servers:
   - "10.129.9.193"
+
 ntp_servers: []
+
 radius:
   servers:
     - "10.129.4.249"
   user: "nile"
   password: "nile123"
   secret: "testing123"
+
 dhcp_servers:
     - "10.129.1.116" 

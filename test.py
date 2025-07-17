@@ -77,6 +77,7 @@ except Exception as e:
 
 def run_cmd(cmd, check=True, capture_output=True, text=True, shell=False):
     try:
+        logger.debug(f"Running command: {cmd}")
         if isinstance(cmd, str):
             cmd = shlex.split(cmd)
         return subprocess.run(cmd, check=check, capture_output=capture_output, text=text, shell=shell)
@@ -109,10 +110,21 @@ try:
     # Service configuration
     custom_dns_servers = config.get('dns_servers', [])
     custom_ntp_servers = config.get('ntp_servers', [])
-    radius_servers = config.get('radius', {}).get('servers', [])
-    radius_user = config.get('radius', {}).get('user', "")
-    radius_password = config.get('radius', {}).get('password', "")
-    radius_secret = config.get('radius', {}).get('secret', "")
+    
+    # Handle radius configuration - can be dict or empty list
+    radius_config = config.get('radius', {})
+    if isinstance(radius_config, dict):
+        radius_servers = radius_config.get('servers', [])
+        radius_user = radius_config.get('user', "")
+        radius_password = radius_config.get('password', "")
+        radius_secret = radius_config.get('secret', "")
+    else:
+        # radius is empty list or other type - use empty defaults
+        radius_servers = []
+        radius_user = ""
+        radius_password = ""
+        radius_secret = ""
+    
     dhcp_servers = config.get('dhcp_servers', [])
 except Exception as e:
     logger.error(f"Error extracting configuration values from config.yaml: {e}")
@@ -279,7 +291,7 @@ for ntp_server_host in ['time.google.com', 'pool.ntp.org'] + custom_ntp_servers:
 
                 data, addr = sock.recvfrom(1024) # Will timeout if server is incorrect or unreachable
                 if data:
-                    logger.info(f"Successfully received NTP response from {ntp_server_host}:{resolved_ip} to {source_ip}")
+                    logger.info(f"Successfully received NTP response from {ntp_server_host}:{resolved_ip} to {source_ip} after {attempt+1} attempts")
                     unpacked = struct.unpack("!B B B b 11I", data)
                     logger.debug(f"Success: NTP response from {ntp_server_host}:{resolved_ip} - LVM:{unpacked[0]} Stratum:{unpacked[1]} Poll:{unpacked[2]} Precision:{unpacked[3]} RootDelay:{unpacked[4]} RootDisp:{unpacked[5]} RefID:{unpacked[6]} RefTS:{unpacked[7]},{unpacked[8]} OrigTS:{unpacked[9]},{unpacked[10]} RxTS:{unpacked[11]},{unpacked[12]} TxTS:{unpacked[13]},{unpacked[14]}")
                     break

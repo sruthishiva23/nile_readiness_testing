@@ -86,6 +86,44 @@ def get_service_name_for_device(device):
     return None
 
 
+try:
+    # Extract configuration values
+    mgmt_interface = config['mgmt_interface']
+    test_interface = config['test_network']['test_interface']
+
+    # Network configuration
+    ip_address = config['test_network']['ip_address']
+    netmask = config['test_network']['netmask']
+    gateway = config['test_network']['gateway']
+
+    # Subnet configuration
+    nsb_subnet = config['subnets']['nsb']
+    sensor_subnet = config['subnets']['sensor']
+    client_subnet = config['subnets']['client']
+
+    # Service configuration
+    custom_dns_servers = config.get('dns_servers', [])
+    custom_ntp_servers = config.get('ntp_servers', [])
+    
+    # Handle radius configuration - can be dict or empty list
+    radius_config = config.get('radius', {})
+    if isinstance(radius_config, dict):
+        radius_servers = radius_config.get('servers', [])
+        radius_user = radius_config.get('user', "")
+        radius_password = radius_config.get('password', "")
+        radius_secret = radius_config.get('secret', "")
+    else:
+        # radius is empty list or other type - use empty defaults
+        radius_servers = []
+        radius_user = ""
+        radius_password = ""
+        radius_secret = ""
+    
+    dhcp_servers = config.get('dhcp_servers', [])
+except Exception as e:
+    logger.error(f"Error extracting configuration values from config.yaml: {e}")
+    exit(1)
+
 # Load saved state
 try:
     with open("state.yaml", "r") as f:
@@ -93,10 +131,6 @@ try:
 except Exception as e:
     logger.error(f"Failed to load state.yaml: {e}")
     exit(1)
-
-
-test_interface = os.environ.get('TEST_INTERFACE') or 'en6'  # Set manually if needed
-logger.info(f"Restoring configuration for {test_interface}")
 
 # 1. Restore interface to DHCP
 service_name = get_service_name_for_device(test_interface)
