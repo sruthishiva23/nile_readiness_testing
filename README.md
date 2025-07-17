@@ -41,37 +41,133 @@ This suite provides comprehensive network readiness testing for macOS systems, d
 - Restores DNS settings to automatic
 - Stops packet capture processes
 
+## Usage Instructions
+
+### Important Notes for macOS
+- **Root Privileges**: All scripts must be run with `sudo` for network interface management and system configuration
+- **Network Interfaces**: Use macOS interface names (typically `en0`, `en1`, etc.) - check with `ifconfig -l`
+- **System Integrity Protection**: Some network operations may require SIP configuration on newer macOS versions
+- **Terminal Access**: Use Terminal.app or iTerm2 for best compatibility
+
+### Step 1: Prepare Configuration
+1. **Check macOS compatibility**: Ensure you're running macOS 11.0+ using `sw_vers`
+2. **Install dependencies**: Follow the Homebrew installation guide below
+3. **Create virtual environment**: `python3 -m venv venv`
+4. **Install Python dependencies**: `source venv/bin/activate && pip install -r requirements.txt`
+5. **Create configuration**: Customize `config.yaml` for your macOS network environment
+6. **Verify root access**: Test with `sudo whoami` (should return "root")
+7. **Check network interfaces**: Use `networksetup -listallhardwareports` to identify interface names
+
+### Step 2: Run Network Setup
+```bash
+sudo python3 setup.py
+```
+
+**Expected Output**:
+- Interface configuration messages
+- DNS setup confirmation
+- Route establishment logs
+- Packet capture initialization
+
+### Step 3: Execute Network Tests
+```bash
+sudo python3 test.py
+```
+
+**Expected Output**:
+- OSPF packet detection results
+- DNS resolution test results
+- RADIUS authentication results
+- NTP synchronization results
+- HTTPS connectivity results
+- DHCP relay test results
+
+### Step 4: Restore Original Configuration
+```bash
+# Clean up and restore original settings
+sudo python3 revert.py
+```
+
+**Expected Output**:
+- Interface restoration messages
+- Route cleanup confirmation
+- DNS restoration logs
+- Interface re-enablement status
+
+### Complete Workflow Example
+```bash
+# 1. Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Install macOS Dependencies
+brew install freeradius-server
+brew install tcpdump bind openssl
+brew install coreutils  # Provides updated network utilities
+
+# 4. Verify macOS System Dependencies Installation (If missing, check Prerequisites for more)
+command -v radclient >/dev/null 2>&1 && echo "✓ radclient available" || echo "✗ radclient missing"
+command -v tcpdump >/dev/null 2>&1 && echo "✓ tcpdump available" || echo "✗ tcpdump missing"  
+command -v dig >/dev/null 2>&1 && echo "✓ dig available" || echo "✗ dig missing"
+command -v openssl >/dev/null 2>&1 && echo "✓ openssl available" || echo "✗ openssl missing"
+
+# Test built-in macOS tools
+command -v ifconfig >/dev/null 2>&1 && echo "✓ ifconfig available" || echo "✗ ifconfig missing"
+command -v ping >/dev/null 2>&1 && echo "✓ ping available" || echo "✗ ping missing"
+command -v networksetup >/dev/null 2>&1 && echo "✓ networksetup available" || echo "✗ networksetup missing"
+
+# 5. Verify Python environment and modules
+python3 -c "import sys; print('Python path:', sys.executable)" && pip list | head -10
+python3 -c "import colorlog, yaml, dhcppython, scapy, ntplib; print('✓ All Python modules imported successfully')"
+
+# 6. Configure your environment
+cp sample/config.yaml config.yaml
+vi config.yaml  # Edit to match your network
+
+# 7. Run the complete test suite
+sudo python3 setup.py    # Setup test environment
+sudo python3 test.py     # Run network tests
+sudo python3 revert.py   # Restore original configuration
+```
+
+## Log Files
+
+The suite generates detailed log files:
+- `nile_readiness_setup.log` - Setup logs
+- `nile_readiness.log` - Test execution logs
+- `nile_readiness_revert.log` - Restoration process logs
+- `packets.pcap` - Network packet capture (created during setup)
+
+## Expected Test Results
+
+### Successful Test Indicators
+- **OSPF**: Detection of Hello packets with area and timing information
+- **DNS**: Successful resolution of test domains from all source IPs
+- **RADIUS**: "Received Access-Accept" messages from RADIUS servers
+- **NTP**: Successful time synchronization with offset measurements
+- **HTTPS**: Valid SSL certificate validation for test endpoints
+- **DHCP**: Receipt of DHCP Offer packets in response to Discover
+
+### Common Failure Scenarios
+- **Permission Denied**: Ensure running with `sudo`
+- **Interface Not Found**: Verify interface names in `config.yaml`
+- **DNS Resolution Failures**: Check DNS server accessibility
+- **Timeout Errors**: Verify network connectivity and firewall settings
+- **RADIUS Auth Failures**: Verify credentials and server accessibility
+
 ## Prerequisites
 
 ### System Requirements
-- **Operating System**: macOS 11.0+ (Big Sur or later)
-  - Tested on macOS 14.x (Sonoma) and macOS 15.x (Sequoia)
+- **Operating System**: macOS
+  - Tested on macOS 15.4 (Sequoia)
 - **Privileges**: Must run as root (`sudo`) for network interface management
-- **Python**: Python 3.8+ with pip (use system Python or Homebrew Python)
+- **Python**: Python 3.13+ with pip (use system Python or Homebrew Python)
 - **Network Access**: Internet connectivity for testing external services
 - **Homebrew**: Package manager for installing additional tools
 
-#### Check Your macOS Version and Architecture
-```bash
-# Check macOS version
-sw_vers
-
-# Check macOS version details
-system_profiler SPSoftwareDataType | grep "System Version"
-
-# Quick version check
-sw_vers -productVersion
-
-# Check if compatible (should be 11.0 or higher)
-sw_vers -productVersion | awk -F. '{if($1>=11 || ($1==10 && $2>=15)) print "Compatible"; else print "Upgrade Required"}'
-
-# Check Mac architecture (important for Homebrew installation)
-uname -m
-# Returns: arm64 (Apple Silicon) or x86_64 (Intel)
-
-# Check processor details
-system_profiler SPHardwareDataType | grep "Processor\|Chip"
-```
 
 ### Required System Tools
 
@@ -142,16 +238,27 @@ brew install coreutils  # Provides updated network utilities
 Test that all required tools are available and working:
 ```bash
 # Test Homebrew-installed tools
-radclient -h 2>/dev/null && echo "✓ radclient available" || echo "✗ radclient missing"
-tcpdump --version 2>/dev/null && echo "✓ tcpdump available" || echo "✗ tcpdump missing"  
-dig -v 2>/dev/null && echo "✓ dig available" || echo "✗ dig missing"
-openssl version && echo "✓ openssl available" || echo "✗ openssl missing"
+command -v radclient >/dev/null 2>&1 && echo "✓ radclient available" || echo "✗ radclient missing"
+command -v tcpdump >/dev/null 2>&1 && echo "✓ tcpdump available" || echo "✗ tcpdump missing"  
+command -v dig >/dev/null 2>&1 && echo "✓ dig available" || echo "✗ dig missing"
+command -v openssl >/dev/null 2>&1 && echo "✓ openssl available" || echo "✗ openssl missing"
 
 # Test built-in macOS tools
-ifconfig 2>/dev/null && echo "✓ ifconfig available" || echo "✗ ifconfig missing"
-ping -c 1 127.0.0.1 >/dev/null 2>&1 && echo "✓ ping available" || echo "✗ ping missing"
-networksetup -help 2>/dev/null && echo "✓ networksetup available" || echo "✗ networksetup missing"
+command -v ifconfig >/dev/null 2>&1 && echo "✓ ifconfig available" || echo "✗ ifconfig missing"
+command -v ping >/dev/null 2>&1 && echo "✓ ping available" || echo "✗ ping missing"
+command -v networksetup >/dev/null 2>&1 && echo "✓ networksetup available" || echo "✗ networksetup missing"
 ```
+
+**Verify Python Virtual Environment:**
+```bash
+# Activate virtual environment and check Python path and packages
+source venv/bin/activate
+python3 -c "import sys; print('Python path:', sys.executable)" && pip list | head -10
+```
+
+Expected output should show:
+- Python path pointing to your project's venv directory (e.g., `/Users/username/nile_readiness_testing/venv/bin/python3`)
+- Required packages listed: colorlog, dhcppython, ntplib, PyYAML, scapy
 
 #### Troubleshooting Installation
 ```bash
@@ -185,13 +292,6 @@ brew --version && echo "✓ Homebrew working" || echo "✗ Homebrew not found"
 
 ### System Integrity Protection (SIP)
 Some network operations may be restricted on newer macOS versions:
-```bash
-# Check SIP status
-csrutil status
-
-# If needed, SIP can be disabled in Recovery Mode (not recommended for production systems)
-# Restart → Hold Cmd+R → Terminal → csrutil disable → restart
-```
 
 ### Network Service Management
 macOS manages network services differently than other Unix systems:
@@ -262,12 +362,6 @@ dhcp_servers:
 ```bash
 # List all active network interfaces
 ifconfig -l
-
-# List all interfaces (including inactive)
-ifconfig -a | grep "^[a-z]" | cut -d: -f1
-
-# Show interface details with IP addresses
-ifconfig | grep -E "^[a-z]|inet "
 ```
 
 #### Map Interfaces to Hardware
@@ -302,100 +396,6 @@ ifconfig en0 | grep "status:"
 ping -c 3 -I en0 8.8.8.8
 ```
 
-## Usage Instructions
-
-### Important Notes for macOS
-- **Root Privileges**: All scripts must be run with `sudo` for network interface management and system configuration
-- **Network Interfaces**: Use macOS interface names (typically `en0`, `en1`, etc.) - check with `ifconfig -l`
-- **System Integrity Protection**: Some network operations may require SIP configuration on newer macOS versions
-- **Terminal Access**: Use Terminal.app or iTerm2 for best compatibility
-
-### Step 1: Prepare Configuration
-1. **Check macOS compatibility**: Ensure you're running macOS 11.0+ using `sw_vers`
-2. **Install dependencies**: Follow the Homebrew installation guide above
-3. **Install Python dependencies**: `pip3 install -r requirements.txt`
-4. **Create configuration**: Customize `config.yaml` for your macOS network environment
-5. **Verify root access**: Test with `sudo whoami` (should return "root")
-6. **Check network interfaces**: Use `networksetup -listallhardwareports` to identify interface names
-
-### Step 2: Run Network Setup
-```bash
-# Set up the test environment
-sudo python3 setup.py
-```
-
-**Expected Output**:
-- Interface configuration messages
-- DNS setup confirmation
-- Route establishment logs
-- Packet capture initialization
-
-### Step 3: Execute Network Tests
-```bash
-# Run comprehensive network tests
-sudo python3 test.py
-```
-
-**Expected Output**:
-- OSPF packet detection results
-- DNS resolution test results
-- RADIUS authentication results
-- NTP synchronization results
-- HTTPS connectivity results
-- DHCP relay test results
-
-### Step 4: Restore Original Configuration
-```bash
-# Clean up and restore original settings
-sudo python3 revert.py
-```
-
-**Expected Output**:
-- Interface restoration messages
-- Route cleanup confirmation
-- DNS restoration logs
-- Interface re-enablement status
-
-### Complete Workflow Example
-```bash
-# 1. Install dependencies
-pip3 install -r requirements.txt
-
-# 2. Configure your environment
-cp config.yaml.example config.yaml
-vi config.yaml  # Edit to match your network
-
-# 3. Run the complete test suite
-sudo python3 setup.py    # Setup test environment
-sudo python3 test.py     # Run network tests
-sudo python3 revert.py   # Restore original configuration
-```
-
-## Log Files
-
-The suite generates detailed log files:
-- `nile_readiness_setup.log` - Setup logs
-- `nile_readiness.log` - Test execution logs
-- `nile_readiness_revert.log` - Restoration process logs
-- `packets.pcap` - Network packet capture (created during setup)
-
-## Expected Test Results
-
-### Successful Test Indicators
-- **OSPF**: Detection of Hello packets with area and timing information
-- **DNS**: Successful resolution of test domains from all source IPs
-- **RADIUS**: "Received Access-Accept" messages from RADIUS servers
-- **NTP**: Successful time synchronization with offset measurements
-- **HTTPS**: Valid SSL certificate validation for test endpoints
-- **DHCP**: Receipt of DHCP Offer packets in response to Discover
-
-### Common Failure Scenarios
-- **Permission Denied**: Ensure running with `sudo`
-- **Interface Not Found**: Verify interface names in `config.yaml`
-- **DNS Resolution Failures**: Check DNS server accessibility
-- **Timeout Errors**: Verify network connectivity and firewall settings
-- **RADIUS Auth Failures**: Verify credentials and server accessibility
-
 ## Troubleshooting
 
 ### Common Issues
@@ -427,7 +427,26 @@ netstat -rn
 ping 10.132.20.1
 ```
 
-**4. Permission Problems (macOS-specific)**
+**4. Python Environment and Module Issues**
+```bash
+# ALWAYS activate virtual environment first
+source venv/bin/activate
+
+# Verify Python environment and packages
+python3 -c "import sys; print('Python path:', sys.executable)" && pip list | head -10
+
+# Expected output should show:
+# - Python path: /Users/username/nile_readiness_testing/venv/bin/python3
+# - Required packages: colorlog, dhcppython, ntplib, PyYAML, scapy
+
+# Test module imports
+python3 -c "import colorlog, yaml, dhcppython, scapy, ntplib; print('✓ All modules imported successfully')"
+
+# If modules are missing, reinstall
+pip install -r requirements.txt
+```
+
+**5. Permission Problems (macOS-specific)**
 ```bash
 # Verify root access
 sudo whoami  # Should return 'root'
@@ -445,7 +464,7 @@ ls -la config.yaml state.yaml
 which radclient dig tcpdump openssl
 ```
 
-**5. macOS Network Service Issues**
+**6. macOS Network Service Issues**
 ```bash
 # Check network service status
 networksetup -getinfo "Wi-Fi"
@@ -497,7 +516,5 @@ sudo pkill tcpdump  # Stop packet capture
 
 For issues or questions:
 1. Check log files for detailed error messages
-2. Verify configuration file syntax and values
-3. Ensure all prerequisites are installed
-4. Test individual network components manually
-5. Review network infrastructure requirements
+2. Ensure all prerequisites are installed
+3. Test individual network components manually
