@@ -2,44 +2,44 @@
 
 ## Overview
 
-This suite provides comprehensive network readiness testing for macOS systems, designed to validate network infrastructure components including routing, DNS, RADIUS authentication, NTP synchronization, HTTPS connectivity, and DHCP relay functionality. The suite consists of three main Python scripts that work together to set up a test environment, run extensive network tests, and clean up afterward.
+This suite provides comprehensive network readiness testing for macOS systems, designed to validate network infrastructure components including routing, DNS, RADIUS authentication, NTP synchronization, HTTPS connectivity, and DHCP relay functionality. The suite includes a unified Python script (`nrt.py`) that performs the complete testing workflow, as well as individual component scripts for granular control.
 
 ## Components
 
-### 1. `setup.py` - Network Environment Setup
-**Purpose**: Configures the macOS system for network testing by setting up interfaces, routing, and DNS.
+### Unified Testing Suite: `nrt.py` (Recommended)
+**Purpose**: A comprehensive single-script solution that performs the complete network readiness testing workflow in one execution.
 
-**Key Functions**:
+**Complete Workflow**:
+- **Setup Phase**: Configures the macOS system for network testing by setting up interfaces, routing, and DNS
+- **Testing Phase**: Performs comprehensive network functionality tests across multiple protocols and services
+- **Restoration Phase**: Automatically restores the system to its original network configuration
+
+**Key Features**:
 - Validates root access and required packages
 - Configures test network interface with static IP
 - Disables unnecessary network interfaces
 - Sets up loopback aliases for subnet testing
-- Configures DNS servers in `/etc/resolv.conf`
-- Establishes static routing via specified gateway
+- Configures DNS servers and establishes static routing
 - Starts packet capture (`tcpdump`) for network analysis
-- Saves system state for later restoration
-
-### 2. `test.py` - Network Connectivity Testing
-**Purpose**: Performs comprehensive network functionality tests across multiple protocols and services.
-
-**Test Categories**:
 - **OSPF Detection**: Sniffs for OSPF Hello packets on the test interface
 - **DNS Testing**: Validates DNS resolution from multiple source IPs
 - **RADIUS Authentication**: Tests authentication against configured RADIUS servers
 - **NTP Synchronization**: Validates time synchronization with NTP servers
 - **HTTPS/TLS Connectivity**: Tests SSL certificate validation and connectivity
 - **DHCP Relay**: Tests DHCP discover/offer functionality
+- **Automatic Cleanup**: Reverts test interface, removes aliases, restores routes and DNS
 
-### 3. `revert.py` - System Restoration
+### Individual Components (Also Available)
+The functionality is also available as separate scripts for granular control:
+
+#### 1. `setup.py` - Network Environment Setup
+**Purpose**: Configures the macOS system for network testing by setting up interfaces, routing, and DNS.
+
+#### 2. `test.py` - Network Connectivity Testing  
+**Purpose**: Performs comprehensive network functionality tests across multiple protocols and services.
+
+#### 3. `revert.py` - System Restoration
 **Purpose**: Restores the system to its original network configuration.
-
-**Restoration Tasks**:
-- Reverts test interface to DHCP configuration
-- Removes loopback IP aliases
-- Restores original default routes
-- Re-enables previously disabled interfaces
-- Restores DNS settings to automatic
-- Stops packet capture processes
 
 ## Usage Instructions
 
@@ -58,41 +58,41 @@ This suite provides comprehensive network readiness testing for macOS systems, d
 6. **Verify root access**: Test with `sudo whoami` (should return "root")
 7. **Check network interfaces**: Use `networksetup -listallhardwareports` to identify interface names
 
-### Step 2: Run Network Setup
+### Step 2: Run Complete Network Testing Suite (Recommended)
 ```bash
-sudo python3 setup.py
+sudo python3 nrt.py
 ```
 
 **Expected Output**:
 - Interface configuration messages
-- DNS setup confirmation
+- DNS setup confirmation  
 - Route establishment logs
 - Packet capture initialization
-
-### Step 3: Execute Network Tests
-```bash
-sudo python3 test.py
-```
-
-**Expected Output**:
 - OSPF packet detection results
 - DNS resolution test results
 - RADIUS authentication results
 - NTP synchronization results
 - HTTPS connectivity results
 - DHCP relay test results
+- Automatic restoration messages
 
-### Step 4: Restore Original Configuration
+### Alternative: Run Individual Components
+If you need granular control, you can run the individual scripts:
+
+#### Step 2a: Network Setup
 ```bash
-# Clean up and restore original settings
-sudo python3 revert.py
+sudo python3 setup.py
 ```
 
-**Expected Output**:
-- Interface restoration messages
-- Route cleanup confirmation
-- DNS restoration logs
-- Interface re-enablement status
+#### Step 2b: Execute Network Tests
+```bash
+sudo python3 test.py
+```
+
+#### Step 2c: Restore Original Configuration
+```bash
+sudo python3 revert.py
+```
 
 ### Complete Workflow Example
 ```bash
@@ -127,19 +127,23 @@ python3 -c "import colorlog, yaml, dhcppython, scapy, ntplib; print('✓ All Pyt
 cp sample/config.yaml config.yaml
 vi config.yaml  # Edit to match your network
 
-# 7. Run the complete test suite
-sudo python3 setup.py    # Setup test environment
-sudo python3 test.py     # Run network tests
-sudo python3 revert.py   # Restore original configuration
+# 7. Run the complete test suite (unified script - recommended)
+sudo python3 nrt.py      # Complete workflow: setup → test → restore
+
+# Alternative: Run individual components for granular control
+# sudo python3 setup.py    # Setup test environment only
+# sudo python3 test.py     # Run network tests only  
+# sudo python3 revert.py   # Restore original configuration only
 ```
 
 ## Log Files
 
 The suite generates detailed log files:
-- `nile_readiness_setup.log` - Setup logs
-- `nile_readiness.log` - Test execution logs
-- `nile_readiness_revert.log` - Restoration process logs
-- `packets.pcap` - Network packet capture (created during setup)
+- `nile_readiness.log` - Complete workflow logs (when using `nrt.py`)
+- `nile_readiness_setup.log` - Setup logs (when using `setup.py` individually)
+- `nile_readiness_test.log` - Setup logs (when using `test.py` individually)
+- `nile_readiness_revert.log` - Restoration process logs (when using `revert.py` individually)
+- `packets.pcap` - Network packet capture (created during setup phase)
 
 ## Expected Test Results
 

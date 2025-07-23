@@ -30,7 +30,7 @@ try:
 
     # File handler(all levels)
     # Clear previous log file by opening in write mode ('w' instead of default 'a')
-    file_handler = logging.FileHandler('nile_readiness.log', mode='w')
+    file_handler = logging.FileHandler('nile_readiness_test.log', mode='w')
     file_handler.setFormatter(file_formatter)
     file_handler.setLevel(logging.DEBUG)
 
